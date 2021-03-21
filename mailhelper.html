@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h2>Resident Instant Lookup</h2>
+    <p>Browse to .xls file from onesite all residents report.</p>
+
+<input type="file" id="fileUpload" name="fileUpload" />
+<input type="button" id="upload" value="Upload" onclick="UploadProcess()" />
+
+<br/>
+
+
+
+
+<input type="text" id="search" placeholder="Search for a Resident" />
+<div id="results"></div>
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script type="text/javascript">
+    var residents = []
+    function clearFileInput(id) 
+{ 
+    var oldInput = document.getElementById(id); 
+
+    var newInput = document.createElement("input"); 
+
+    newInput.type = "file"; 
+    newInput.id = oldInput.id; 
+    newInput.name = oldInput.name; 
+    newInput.className = oldInput.className; 
+    newInput.style.cssText = oldInput.style.cssText; 
+    // TODO: copy any other relevant attributes 
+
+    oldInput.parentNode.replaceChild(newInput, oldInput); 
+}
+    function UploadProcess() {
+        residents = [];
+        results.innerHTML = "";
+        //Reference the FileUpload element.
+        var fileUpload = document.getElementById("fileUpload");
+ 
+        //Validate whether File is valid Excel file.
+        var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
+        if (regex.test(fileUpload.value.toLowerCase())) {
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+ 
+                //For Browsers other than IE.
+                if (reader.readAsBinaryString) {
+                    reader.onload = function (e) {
+                        GetTableFromExcel(e.target.result);
+                    };
+                    reader.readAsBinaryString(fileUpload.files[0]);
+                } else {
+                    //For IE Browser.
+                    reader.onload = function (e) {
+                        var data = "";
+                        var bytes = new Uint8Array(e.target.result);
+                        for (var i = 0; i < bytes.byteLength; i++) {
+                            data += String.fromCharCode(bytes[i]);
+                        }
+                        GetTableFromExcel(data);
+                    };
+                    reader.readAsArrayBuffer(fileUpload.files[0]);
+                }
+            } else {
+                alert("This browser does not support HTML5.");
+                return;
+            }
+
+        } else {
+            alert("Please upload a valid Excel file.");
+        }
+        showCountries();
+    };
+    function GetTableFromExcel(data) {
+        //Read the Excel File data in binary
+        var cfb = XLS.CFB.read(data, {type: 'binary'});
+        var workbook = XLS.parse_xlscfb(cfb);
+ 
+        //get the name of First Sheet.
+        var Sheet = workbook.SheetNames[0];
+ 
+        //Read all rows from First Sheet into an JSON array.
+        var excelRows2 = XLS.utils.sheet_to_csv(workbook.Sheets[Sheet]);
+        var lines = excelRows2.split("\n");
+        var result = [];
+
+        for(var i=6;i<lines.length-2;i++){
+
+            var obj = {};
+            var currentline=lines[i].split(",");
+            residents.push([currentline[1].split("\"")[0] + " " + currentline[0].split("\"")[1], currentline[4]]);
+
+        
+    }
+    };
+
+    const search_input = document.getElementById('search');
+const results = document.getElementById('results');
+
+let search_term = '';
+let countries;
+
+
+const showCountries = async () => {
+    results.innerHTML = '';
+
+
+    const ul = document.createElement('ul');
+    ul.classList.add('residents');
+
+    residents
+        .filter(resident =>
+            resident[0].toLowerCase().includes(search_term.toLowerCase())
+        )
+        .forEach(resident => {
+            const li = document.createElement('li');
+            li.classList.add('country-item');
+
+            const resident_name = document.createElement('h3');
+            resident_name.innerText = resident[0];
+            resident_name.classList.add('country-name');
+
+            const country_info = document.createElement('div');
+            country_info.classList.add('country-info');
+
+            const country_population = document.createElement('h2');
+            country_population.innerText = resident[1];
+            country_population.classList.add('country-population');
+
+            const country_popupation_text = document.createElement('h5');
+        country_popupation_text.innerText = 'Apartment';
+        country_popupation_text.classList.add('country-population-text');
+
+        country_info.appendChild(country_popupation_text);
+
+            country_info.appendChild(country_population);
+           
+            li.appendChild(resident_name);
+            li.appendChild(country_info);
+
+            ul.appendChild(li);
+        });
+
+    results.appendChild(ul);
+};
+
+
+search_input.addEventListener('input', e => {
+    search_term = e.target.value;
+    showCountries();
+});
+
+
+
+</script>
+
+</body>
+</html>
