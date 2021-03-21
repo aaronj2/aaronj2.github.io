@@ -10,7 +10,8 @@
 
 <input type="file" id="fileUpload" name="fileUpload" />
 <input type="button" id="upload" value="Upload" onclick="UploadProcess()" />
-
+<input type="button" id="clear" value="Clear" onclick="ClearResList()" />
+<p id="textarea"></p>
 <br/>
 
 
@@ -26,6 +27,13 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
 <script type="text/javascript">
     var residents = []
+    function ClearResList()
+    {
+        residents = [];
+        showResidents();
+        document.getElementById("textarea").innerHTML = "";
+        clearFileInput('fileUpload');
+    }
     function clearFileInput(id) 
 { 
     var oldInput = document.getElementById(id); 
@@ -68,6 +76,7 @@
                             data += String.fromCharCode(bytes[i]);
                         }
                         GetTableFromExcel(data);
+                        
                     };
                     reader.readAsArrayBuffer(fileUpload.files[0]);
                 }
@@ -79,39 +88,37 @@
         } else {
             alert("Please upload a valid Excel file.");
         }
-        showCountries();
+        
     };
     function GetTableFromExcel(data) {
+        document.getElementById("textarea").innerHTML = "";
+        var counter = 0;
         //Read the Excel File data in binary
         var cfb = XLS.CFB.read(data, {type: 'binary'});
-        var workbook = XLS.parse_xlscfb(cfb);
- 
+        var workbook = XLS.parse_xlscfb(cfb); 
         //get the name of First Sheet.
         var Sheet = workbook.SheetNames[0];
- 
         //Read all rows from First Sheet into an JSON array.
         var excelRows2 = XLS.utils.sheet_to_csv(workbook.Sheets[Sheet]);
         var lines = excelRows2.split("\n");
         var result = [];
-
         for(var i=6;i<lines.length-2;i++){
-
             var obj = {};
             var currentline=lines[i].split(",");
             residents.push([currentline[1].split("\"")[0] + " " + currentline[0].split("\"")[1], currentline[4]]);
-
-        
+            counter++;    
     }
+        document.getElementById("textarea").innerHTML = "Successfully Loaded " + counter + " Residents";
+        showResidents();
     };
 
     const search_input = document.getElementById('search');
 const results = document.getElementById('results');
 
 let search_term = '';
-let countries;
 
 
-const showCountries = async () => {
+const showResidents = async () => {
     results.innerHTML = '';
 
 
@@ -124,29 +131,29 @@ const showCountries = async () => {
         )
         .forEach(resident => {
             const li = document.createElement('li');
-            li.classList.add('country-item');
+            li.classList.add('resident-item');
 
             const resident_name = document.createElement('h3');
             resident_name.innerText = resident[0];
-            resident_name.classList.add('country-name');
+            resident_name.classList.add('resident-name');
 
-            const country_info = document.createElement('div');
-            country_info.classList.add('country-info');
+            const apt_info = document.createElement('div');
+            apt_info.classList.add('apt-info');
 
-            const country_population = document.createElement('h2');
-            country_population.innerText = resident[1];
-            country_population.classList.add('country-population');
+            const apt_num = document.createElement('h2');
+            apt_num.innerText = resident[1];
+            apt_num.classList.add('aptnum');
 
-            const country_popupation_text = document.createElement('h5');
-        country_popupation_text.innerText = 'Apartment';
-        country_popupation_text.classList.add('country-population-text');
+            const apt_text = document.createElement('h5');
+        apt_text.innerText = 'Apartment';
+        apt_text.classList.add('apt-text');
 
-        country_info.appendChild(country_popupation_text);
+        apt_info.appendChild(apt_text);
 
-            country_info.appendChild(country_population);
+            apt_info.appendChild(apt_num);
            
             li.appendChild(resident_name);
-            li.appendChild(country_info);
+            li.appendChild(apt_info);
 
             ul.appendChild(li);
         });
@@ -157,7 +164,7 @@ const showCountries = async () => {
 
 search_input.addEventListener('input', e => {
     search_term = e.target.value;
-    showCountries();
+    showResidents();
 });
 
 
